@@ -7,7 +7,6 @@ import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.QueryMap
 
-// TODO: 9/11/21 update getBreeds
 interface KatService {
 
     @Headers("x-api-key: 1fa2c5c0-305d-4305-8edc-2efcbf37b9b4")

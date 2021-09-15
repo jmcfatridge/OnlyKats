@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
+import com.olayg.onlykats.R
 import com.olayg.onlykats.adapter.BreedAdapter
 import com.olayg.onlykats.adapter.KatAdapter
 import com.olayg.onlykats.databinding.FragmentBrowseBinding
@@ -40,6 +41,8 @@ class BrowseFragment : Fragment() {
         savedInstanceState: Bundle?
     ) = FragmentBrowseBinding.inflate(layoutInflater, container, false).also {
         _binding = it
+        if (katViewModel.queries == null)
+            findNavController().navigate(BrowseFragmentDirections.actionSettingsFragment())
         initViews()
     }.root
 
@@ -55,7 +58,6 @@ class BrowseFragment : Fragment() {
 
     // with(receiver) is 1 of 5 scope functions
     private fun initViews() = with(binding) {
-
         rvList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 if (!recyclerView.canScrollVertically(-1) && dy < 0) {
@@ -87,6 +89,7 @@ class BrowseFragment : Fragment() {
     private fun loadKats(kats: List<Kat>) = with(binding.rvList) {
         Log.d(TAG, "ApiState.Success: $kats")
         if (adapter == null) adapter = katAdapter
+        if (katViewModel.currentPageAction == PageAction.FIRST) katAdapter.clear()
         breedAdapter.clear()
         katAdapter.updateList(kats)
     }

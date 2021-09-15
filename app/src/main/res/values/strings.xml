@@ -6,4 +6,10 @@
     <string name="limit">Limit</string>
     <string name="apply">Apply</string>
     <string name="endpoint">Endpoint</string>
+    <string name="firstRating">Adaptability</string>
+    <string name="secondRating">Affection</string>
+    <string name="thirdRating">Intelligence</string>
+    <string name="fourthRating">Energy</string>
+    <string name="fifthRating">Shedding</string>
+    <string name="sixthRating">Life Span</string>
 </resources>

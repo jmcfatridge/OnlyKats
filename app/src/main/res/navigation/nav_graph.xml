@@ -22,7 +22,11 @@
         android:id="@+id/detailsFragment"
         android:name="com.olayg.onlykats.view.DetailsFragment"
         android:label="fragment_detail"
-        tools:layout="@layout/fragment_detail" />
+        tools:layout="@layout/fragment_detail">
+        <argument
+            android:name="breed"
+            app:argType="com.olayg.onlykats.util.BreedArgs" />
+    </fragment>
 
     <fragment
         android:id="@+id/settingsFragment"

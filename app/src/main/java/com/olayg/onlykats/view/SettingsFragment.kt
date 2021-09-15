@@ -1,5 +1,6 @@
 package com.olayg.onlykats.view
 
+import android.app.Activity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,9 +9,11 @@ import android.widget.ArrayAdapter
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.textview.MaterialTextView
 import com.olayg.onlykats.R
+import com.olayg.onlykats.adapter.KatAdapter
 import com.olayg.onlykats.databinding.FragmentSettingsBinding
 import com.olayg.onlykats.model.request.Queries
 import com.olayg.onlykats.util.EndPoint
@@ -19,7 +22,7 @@ import com.olayg.onlykats.viewmodel.KatViewModel
 /**
  * A simple [Fragment] subclass.
  */
-// TODO: 9/11/21 Navigate back on apply click
+// TODO: 9/11/21 Navigate back on apply click *done
 // TODO: 9/10/21 Use toggle method to show or hide unique views for Images (Try using Group in ConstraintLayout)
 // TODO: 9/10/21 Use toggle method to show or hide unique views for Breeds
 class SettingsFragment : Fragment(R.layout.fragment_settings) {
@@ -51,7 +54,10 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
     private fun initView() = with(binding) {
         katViewModel.queries?.let { sliderLimit.value = it.limit.toFloat() }
         sliderLimit.addOnChangeListener { _, _, _ -> toggleApply() }
-        btnApply.setOnClickListener { katViewModel.fetchData(getKatQueries()) }
+        btnApply.setOnClickListener {
+            katViewModel.fetchData(getKatQueries())
+            it.findNavController().navigate(R.id.browseFragment)
+        }
     }
 
     private fun initObservers() = with(katViewModel) {

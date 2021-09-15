@@ -1,12 +1,18 @@
 package com.olayg.onlykats.adapter
 
-import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
+import com.olayg.onlykats.R
 import com.olayg.onlykats.databinding.ItemBreedMenuBinding
 import com.olayg.onlykats.model.Breed
-import com.olayg.onlykats.model.Kat
+import com.olayg.onlykats.util.BreedArgs
+import com.olayg.onlykats.view.BrowseFragment
+import com.olayg.onlykats.view.BrowseFragmentDirections
 
 /**
  * ListView - loads all objects into memory
@@ -15,6 +21,7 @@ import com.olayg.onlykats.model.Kat
  */
 // TODO: 9/11/21 Setup breed adapter to display list of breeds
 // TODO: 9/11/21 update the clear method
+
 class BreedAdapter(private val breedList: MutableList<Breed> = mutableListOf()
 ) : RecyclerView.Adapter<BreedAdapter.BreedViewHolder>() {
 
@@ -25,14 +32,15 @@ class BreedAdapter(private val breedList: MutableList<Breed> = mutableListOf()
     ) = BreedViewHolder.getInstance(parent)
 
     override fun onBindViewHolder(holder: BreedViewHolder, position: Int) {
-        holder.loadBreed(breedList[position])
+        var item = breedList[position]
+        holder.loadBreed(item)
     }
 
     override fun getItemCount() = breedList.size
 
     fun clear() {
         breedList.clear()
-        val listSize = 0
+        val listSize = breedList.size
         notifyItemRangeRemoved(0, listSize)
     }
 
@@ -50,6 +58,16 @@ class BreedAdapter(private val breedList: MutableList<Breed> = mutableListOf()
 
         fun loadBreed(breed: Breed) = with(binding) {
             rvBreed.text = breed.name
+            val bArgs = BreedArgs(
+                breed.adaptability, breed.affectionLevel, breed.description, breed.energyLevel, breed.id,
+                breed.intelligence, breed.lifeSpan, breed.name, breed.sheddingLevel, breed.vcaHospitalsUrl,
+                breed.vetStreetUrl, breed.vocalisation, breed.wikipediaUrl,
+                breed.image?.url
+            )
+            rvBreed.setOnClickListener {
+                val action = BrowseFragmentDirections.actionDetailsFragment(bArgs)
+                it.findNavController().navigate(action)
+            }
         }
 
         companion object {
