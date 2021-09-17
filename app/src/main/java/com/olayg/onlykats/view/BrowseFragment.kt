@@ -1,13 +1,18 @@
 package com.olayg.onlykats.view
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.olayg.onlykats.R
@@ -16,10 +21,14 @@ import com.olayg.onlykats.adapter.KatAdapter
 import com.olayg.onlykats.databinding.FragmentBrowseBinding
 import com.olayg.onlykats.model.Breed
 import com.olayg.onlykats.model.Kat
+import com.olayg.onlykats.model.request.Queries
 import com.olayg.onlykats.util.ApiState
 import com.olayg.onlykats.util.EndPoint
 import com.olayg.onlykats.util.PageAction
+import com.olayg.onlykats.util.UserManager
 import com.olayg.onlykats.viewmodel.KatViewModel
+import kotlinx.coroutines.flow.collect
+
 
 /**
  * A simple [Fragment] subclass.
@@ -27,8 +36,10 @@ import com.olayg.onlykats.viewmodel.KatViewModel
 // TODO: 9/11/21 Navigate automatically to SettingsFragment if no data present
 // TODO: 9/11/21 Observe breeds and react to states
 // TODO: 9/11/21 Show an AlertDialog with error message to prompt user of failures
+
 class BrowseFragment : Fragment() {
 
+    private val userManager by lazy { context?.let { UserManager(it.dataStore) } }
     private var _binding: FragmentBrowseBinding? = null
     private val binding get() = _binding!!
     private val katViewModel by activityViewModels<KatViewModel>()
@@ -41,18 +52,24 @@ class BrowseFragment : Fragment() {
         savedInstanceState: Bundle?
     ) = FragmentBrowseBinding.inflate(layoutInflater, container, false).also {
         _binding = it
-        if (katViewModel.queries == null)
-            findNavController().navigate(BrowseFragmentDirections.actionSettingsFragment())
-        initViews()
     }.root
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupObservers()
+        if (katViewModel.queries == null) viewLifecycleOwner.lifecycleScope.launchWhenCreated {
+            userManager?.getStoredValues()?.collect {
+                Log.e("QUERIES", "$it")
+                if (it == null) findNavController().navigate(BrowseFragmentDirections.actionSettingsFragment())
+                else it.let { katViewModel.fetchData(it) }
+            }
+        }
+        initViews()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+
         _binding = null
     }
 
@@ -71,24 +88,21 @@ class BrowseFragment : Fragment() {
     }
 
     private fun setupObservers() = with(katViewModel) {
-        if (queries?.endPoint == EndPoint.IMAGES) {
-            katState.observe(viewLifecycleOwner) { state ->
-                binding.pbLoading.isVisible = state is ApiState.Loading
-                if (state is ApiState.Success) loadKats(state.data)
-                if (state is ApiState.Failure) handleFailure(state.errorMsg)
-            }
-        } else {
-            breedState.observe(viewLifecycleOwner) { state ->
-                binding.pbLoading.isVisible = state is ApiState.Loading
-                if (state is ApiState.Success) loadBreeds(state.data)
-                if (state is ApiState.Failure) handleFailure(state.errorMsg)
-            }
+        katState.observe(viewLifecycleOwner) { state ->
+            binding.pbLoading.isVisible = state is ApiState.Loading
+            if (state is ApiState.Success) loadKats(state.data)
+            if (state is ApiState.Failure) handleFailure(state.errorMsg)
+        }
+        breedState.observe(viewLifecycleOwner) { state ->
+            binding.pbLoading.isVisible = state is ApiState.Loading
+            if (state is ApiState.Success) loadBreeds(state.data)
+            if (state is ApiState.Failure) handleFailure(state.errorMsg)
         }
     }
 
     private fun loadKats(kats: List<Kat>) = with(binding.rvList) {
         Log.d(TAG, "ApiState.Success: $kats")
-        if (adapter == null) adapter = katAdapter
+        if (adapter == null || adapter == breedAdapter) adapter = katAdapter
         if (katViewModel.currentPageAction == PageAction.FIRST) katAdapter.clear()
         breedAdapter.clear()
         katAdapter.updateList(kats)
@@ -96,7 +110,7 @@ class BrowseFragment : Fragment() {
 
     private fun loadBreeds(breeds: List<Breed>) = with(binding.rvList) {
         Log.d(TAG, "ApiState.Success: $breeds")
-        if (adapter == null) adapter = breedAdapter
+        if (adapter == null || adapter == katAdapter) adapter = breedAdapter
         katAdapter.clear()
         breedAdapter.updateList(breeds)
     }

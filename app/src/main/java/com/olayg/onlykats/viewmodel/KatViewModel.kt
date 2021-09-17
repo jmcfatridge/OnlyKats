@@ -8,6 +8,9 @@ import com.olayg.onlykats.repo.KatRepo
 import com.olayg.onlykats.util.ApiState
 import com.olayg.onlykats.util.EndPoint
 import com.olayg.onlykats.util.PageAction
+import com.olayg.onlykats.util.UserManager
+import com.olayg.onlykats.view.HomeActivity
+import com.olayg.onlykats.view.dataStore
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
@@ -66,7 +69,6 @@ class KatViewModel : ViewModel() {
     }
 
     private fun getBreeds(queries: Queries) {
-        queries.limit = 80
         viewModelScope.launch {
             KatRepo.getBreedState(queries).collect { breedState ->
                 isNextPage = breedState !is ApiState.EndOfPage
