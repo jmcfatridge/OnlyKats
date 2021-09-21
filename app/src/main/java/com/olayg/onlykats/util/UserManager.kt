@@ -1,18 +1,28 @@
 package com.olayg.onlykats.util
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import com.olayg.onlykats.model.request.Queries
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 
-class UserManager(private val dataStore: DataStore<Preferences>) {
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
+class UserManager private constructor(private val dataStore: DataStore<Preferences>) {
 
     companion object {
+        private var INSTANCE: UserManager? = null
+        fun getInstance(context: Context?): UserManager {
+            if (INSTANCE == null) if (context != null) {
+                INSTANCE = UserManager(context.dataStore)
+            }
+            return INSTANCE!!
+        }
         val ENDPOINT_KEY = stringPreferencesKey("ENDPOINT")
         val LIMIT_KEY = intPreferencesKey("LIMIT")
         val PAGE_KEY = intPreferencesKey("PAGE")
@@ -26,21 +36,17 @@ class UserManager(private val dataStore: DataStore<Preferences>) {
          }
     }
 
-//    private val storedEndPoint: Flow<String?> = dataStore.data.map { preference ->
-//        preference[ENDPOINT_KEY]
-//    }
-//    private val storedLimit: Flow<Int?> = dataStore.data.map { preference ->
-//        preference[LIMIT_KEY]
-//    }
-//    private val storedPage: Flow<Int?> = dataStore.data.map { preference ->
-//        preference[PAGE_KEY]
-//    }
+    suspend fun updatePage(page: Int) {
+        dataStore.edit {
+            it[PAGE_KEY] = page
+        }
+    }
 
     fun getStoredValues(): Flow<Queries?> {
         return dataStore.data.map { it ->
             it[LIMIT_KEY]?.let { it1 ->
                 Queries(
-                    it[ENDPOINT_KEY]?.let { it1 -> EndPoint.valueOf(it1) },
+                    it[ENDPOINT_KEY]?.let { it2 -> EndPoint.valueOf(it2) },
                     it1,
                     it[PAGE_KEY]
                 )

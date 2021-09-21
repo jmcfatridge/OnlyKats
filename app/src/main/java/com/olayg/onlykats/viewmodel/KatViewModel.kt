@@ -1,5 +1,8 @@
 package com.olayg.onlykats.viewmodel
 
+import android.app.Application
+import android.util.Log
+import androidx.datastore.dataStore
 import androidx.lifecycle.*
 import com.olayg.onlykats.model.Breed
 import com.olayg.onlykats.model.Kat
@@ -8,15 +11,12 @@ import com.olayg.onlykats.repo.KatRepo
 import com.olayg.onlykats.util.ApiState
 import com.olayg.onlykats.util.EndPoint
 import com.olayg.onlykats.util.PageAction
-import com.olayg.onlykats.util.UserManager
-import com.olayg.onlykats.view.HomeActivity
-import com.olayg.onlykats.view.dataStore
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 // TODO: 9/10/21 Get the breedState from repo and load into the breedState livedata
 // TODO: 9/10/21 Once you the breedState from repo make sure you update isNextPage
-class KatViewModel : ViewModel() {
+class KatViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _katState = MutableLiveData<ApiState<List<Kat>>>()
     val katState: LiveData<ApiState<List<Kat>>>
@@ -51,6 +51,7 @@ class KatViewModel : ViewModel() {
             val shouldFetchPage = isNextPage || pageAction == PageAction.FIRST
             if (shouldFetchPage) {
                 currentPage = query.page!!
+                Log.e("CURRENT PAGE", "$currentPage")
                 when (query.endPoint) {
                     EndPoint.IMAGES -> getImages(query)
                     EndPoint.BREEDS -> getBreeds(query)
@@ -61,9 +62,11 @@ class KatViewModel : ViewModel() {
 
     private fun getImages(queries: Queries) {
         viewModelScope.launch {
-            KatRepo.getKatState(queries).collect { katState ->
-                isNextPage = katState !is ApiState.EndOfPage
-                _katState.postValue(katState)
+            KatRepo.getKatState(getApplication(), queries).collect { katList ->
+                val state = if(katList.isNullOrEmpty()) ApiState.Failure("")
+                else ApiState.Success(katList)
+                //isNextPage = katState !is ApiState.EndOfPage
+                _katState.postValue(state)
             }
         }
     }

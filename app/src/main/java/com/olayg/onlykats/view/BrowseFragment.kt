@@ -1,29 +1,22 @@
 package com.olayg.onlykats.view
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
-import com.olayg.onlykats.R
 import com.olayg.onlykats.adapter.BreedAdapter
 import com.olayg.onlykats.adapter.KatAdapter
 import com.olayg.onlykats.databinding.FragmentBrowseBinding
 import com.olayg.onlykats.model.Breed
 import com.olayg.onlykats.model.Kat
-import com.olayg.onlykats.model.request.Queries
 import com.olayg.onlykats.util.ApiState
-import com.olayg.onlykats.util.EndPoint
 import com.olayg.onlykats.util.PageAction
 import com.olayg.onlykats.util.UserManager
 import com.olayg.onlykats.viewmodel.KatViewModel
@@ -39,7 +32,6 @@ import kotlinx.coroutines.flow.collect
 
 class BrowseFragment : Fragment() {
 
-    private val userManager by lazy { context?.let { UserManager(it.dataStore) } }
     private var _binding: FragmentBrowseBinding? = null
     private val binding get() = _binding!!
     private val katViewModel by activityViewModels<KatViewModel>()
@@ -58,8 +50,7 @@ class BrowseFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupObservers()
         if (katViewModel.queries == null) viewLifecycleOwner.lifecycleScope.launchWhenCreated {
-            userManager?.getStoredValues()?.collect {
-                Log.e("QUERIES", "$it")
+            UserManager.getInstance(view.context).getStoredValues().collect {
                 if (it == null) findNavController().navigate(BrowseFragmentDirections.actionSettingsFragment())
                 else it.let { katViewModel.fetchData(it) }
             }

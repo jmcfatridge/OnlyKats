@@ -1,9 +1,7 @@
 package com.olayg.onlykats.view
 
-import android.app.Activity
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import androidx.core.view.isVisible
@@ -11,10 +9,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
-import androidx.navigation.fragment.findNavController
 import com.google.android.material.textview.MaterialTextView
 import com.olayg.onlykats.R
-import com.olayg.onlykats.adapter.KatAdapter
 import com.olayg.onlykats.databinding.FragmentSettingsBinding
 import com.olayg.onlykats.model.request.Queries
 import com.olayg.onlykats.util.EndPoint
@@ -29,7 +25,6 @@ import com.olayg.onlykats.viewmodel.KatViewModel
 // TODO: 9/10/21 Use toggle method to show or hide unique views for Breeds
 class SettingsFragment : Fragment(R.layout.fragment_settings) {
 
-    private val userManager by lazy { context?.let { UserManager(it.dataStore) } }
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
     private val katViewModel by activityViewModels<KatViewModel>()
@@ -59,14 +54,12 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         sliderLimit.addOnChangeListener { _, _, _ -> toggleApply() }
         btnApply.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launchWhenResumed {
-                getKatQueries().endPoint?.let { it1 ->
-                    getKatQueries().page?.let { it2 ->
-                        userManager?.updateValues(
-                            it1.name,
-                            getKatQueries().limit,
-                            it2
-                        )
-                    }
+                getKatQueries().endPoint?.let { it ->
+                    UserManager.getInstance(view?.context).updateValues(
+                        it.name,
+                        getKatQueries().limit,
+                        getKatQueries().page ?: 0
+                    )
                 }
             }
             katViewModel.fetchData(getKatQueries())

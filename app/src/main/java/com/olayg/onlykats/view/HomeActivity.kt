@@ -15,8 +15,6 @@ import com.olayg.onlykats.model.request.Queries
 import com.olayg.onlykats.util.UserManager
 import com.olayg.onlykats.viewmodel.KatViewModel
 
-val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
-
 class HomeActivity : AppCompatActivity() {
 
     private val binding by lazy { ActivityHomeBinding.inflate(layoutInflater) }

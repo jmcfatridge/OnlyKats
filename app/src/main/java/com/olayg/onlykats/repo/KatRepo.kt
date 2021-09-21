@@ -1,10 +1,15 @@
 package com.olayg.onlykats.repo
 
+import android.content.Context
 import android.util.Log
+import com.olayg.onlykats.model.Kat
 import com.olayg.onlykats.model.request.Queries
+import com.olayg.onlykats.repo.local.KatDatabase
 import com.olayg.onlykats.repo.remote.RetrofitInstance
 import com.olayg.onlykats.util.ApiState
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import retrofit2.Response
 
 // TODO: 9/11/21 Update breeds method to fetch from katService and return correct API state
 // TODO: 9/11/21 Update query map to all possible multiple queries
@@ -12,60 +17,38 @@ object KatRepo {
     private const val TAG = "KAT-REPO"
     private val katService by lazy { RetrofitInstance.katService }
 
-    fun getKatState(queries: Queries) = flow {
-        Log.d(TAG, "getKatState: emit(ApiState.Loading)")
+    suspend fun getKatState(context: Context, queries: Queries) : Flow<List<Kat>> {
+        val katDao = KatDatabase.getInstance(context).katDao()
+        val katFlow = katDao.getAll()
+        val katResponse = katService.getKatImages(queries.asQueryMap)
+        if (!katResponse.body().isNullOrEmpty()) katDao.insertAll(*katResponse.body()!!.toTypedArray())
+        return katFlow
+//        fetchKatState(queries)
+//        emit(ApiState.Loading)
+//        val state = if (queries.endPoint != null) {
+//            val katState = katService.getKatImages(queries.asQueryMap).getApiState()
+//            if (katState is ApiState.Success) {
+//                KatDatabase.getInstance(context).katDao().insertAll(*katState.data.toTypedArray())
+//                ApiState.Success(KatDatabase.getInstance(context).katDao().getAll())
+//            } else katState
+//        } else ApiState.Failure("Endpoint is null")
+//        emit(state)
+    }
+
+
+    fun getBreedState(queries: Queries) = flow {
         emit(ApiState.Loading)
-        Log.d(TAG, "getKatState: katService.getData(limit, page, order)")
-
         val state = if (queries.endPoint != null) {
-            val katResponse = katService.getKatImages(queries.asQueryMap)
-            Log.d(TAG, "getKatState: katResponse = ${katResponse.body()}")
-
-            if (katResponse.isSuccessful) {
-                Log.d(TAG, "getKatState: katResponse.isSuccessful")
-                if (katResponse.body().isNullOrEmpty()) {
-                    Log.d(TAG, "getKatState: EndOfPage")
-                    ApiState.EndOfPage
-                } else {
-                    Log.d(TAG, "getKatState: Success(katResponse.body()!!)")
-                    ApiState.Success(katResponse.body()!!)
-                }
-            } else {
-                Log.d(TAG, "getKatState: Failure(\"Error fetching data.\")")
-                ApiState.Failure("Error fetching data.")
-            }
+            katService.getBreeds(queries.asQueryMap).getApiState()
         } else ApiState.Failure("Endpoint is null")
-
-        Log.d(TAG, "getKatState: emit(state)")
         emit(state)
     }
 
-    fun getBreedState(queries: Queries) = flow {
-        Log.d(TAG, "getBreedState: emit(ApiState.Loading)")
-        emit(ApiState.Loading)
-        Log.d(TAG, "getBreedState: katService.getData(limit, page, order)")
-
-        val state = if (queries.endPoint != null) {
-            val katResponse = katService.getBreeds(queries.asQueryMap)
-            Log.d(TAG, "getBreedState: katResponse = ${katResponse.body()}")
-
-            if (katResponse.isSuccessful) {
-                Log.d(TAG, "getBreedState: katResponse.isSuccessful")
-                if (katResponse.body().isNullOrEmpty()) {
-                    Log.d(TAG, "getBreedState: EndOfPage")
-                    ApiState.EndOfPage
-                } else {
-                    Log.d(TAG, "getBreedState: Success(katResponse.body()!!)")
-                    ApiState.Success(katResponse.body()!!)
-                }
-            } else {
-                Log.d(TAG, "getBreedState: Failure(\"Error fetching data.\")")
-                ApiState.Failure("Error fetching data.")
-            }
-        } else ApiState.Failure("Endpoint is null")
-
-        Log.d(TAG, "getBreedState: emit(state)")
-        emit(state)
+    private fun <S> Response<List<S>>.getApiState(): ApiState<List<S>> {
+        return  if (isSuccessful) {
+            if(body().isNullOrEmpty()) ApiState.EndOfPage
+            else ApiState.Success(body()!!)
+        } else ApiState.Failure("Error fetching data!")
     }
 
     private val Queries.asQueryMap: Map<String, Any>
